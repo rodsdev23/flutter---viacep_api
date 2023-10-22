@@ -12,6 +12,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late CepsBuscaCepsRepository cepsBuscaCepsRepository;
+
   CepsBuscaCepsModel _cepsBuscaCeps =
       CepsBuscaCepsModel([]); // começa com vazio
 
@@ -29,10 +30,21 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       carregando = true;
     });
-    final ceps = await cepsBuscaCepsRepository.obterTodosCeps();
+    var ceps = await cepsBuscaCepsRepository.obterTodosCeps();
     setState(() {
       _cepsBuscaCeps = CepsBuscaCepsModel(
           ceps.results); // Atualize o objeto com a nova lista
+      carregando = false;
+    });
+  }
+
+  pesquisarCep(String cep) async {
+    setState(() {
+      carregando = true;
+    });
+    await cepsBuscaCepsRepository.pesquisarCep(cep);
+
+    setState(() {
       carregando = false;
     });
   }
@@ -58,29 +70,61 @@ class _HomePageState extends State<HomePage> {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(
-                controller: cepController,
-                decoration: const InputDecoration(labelText: "Digite o CEP"),
-                onChanged: (value) async {
-                  if (cepController.text.isNotEmpty) {
-                    var ceps = await cepsBuscaCepsRepository.obterTodosCeps();
-                    setState(() {
-                      _cepsBuscaCeps.results =
-                          ceps.results; // Atualize a lista com os dados obtidos
-                    });
-                  } else {
-                    setState(() {
-                      _cepsBuscaCeps.results.clear(); // Limpe a lista
-                    });
-                    // Você pode adicionar lógica adicional aqui, se necessário.
-                  }
-                },
-              ),
+                  controller: cepController,
+                  decoration: const InputDecoration(labelText: "Digite o CEP"),
+                  onChanged: (value) async {
+                    final inputCep = cepController.text;
+
+                    if (inputCep.isNotEmpty) {
+                      setState(() {
+                        _cepsBuscaCeps.results = [];
+                        carregando = true;
+                      });
+                      pesquisarCep(inputCep);
+                    }
+                  }),
             ),
-            ElevatedButton(
-              onPressed: () {
-                obterCeps(); // Chame a função obterCeps para buscar os CEPs
-              },
-              child: const Text("Buscar"),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                    child: const Text("Buscar"),
+                    onPressed: () async {
+                      var verificarCepController =
+                          double.parse(cepController.text);
+                      if (verificarCepController >= 8) {
+                        setState(() {
+                          _cepsBuscaCeps.results = [];
+                          carregando = true;
+                        });
+                        final inputCep = cepController.text;
+                        if (inputCep.isNotEmpty &&
+                            double.tryParse(inputCep) != null) {
+                          final parsedCep = double.parse(inputCep);
+                          await pesquisarCep(parsedCep.toString());
+                        } else {
+                          showDialog<AlertDialog>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                    content: SingleChildScrollView(
+                                      child: ListBody(
+                                        children: <Widget>[
+                                          Text('CEP inválido!'),
+                                        ],
+                                      ),
+                                    ),
+                                  ));
+                        }
+                      }
+                    }),
+                const SizedBox(
+                  width: 20,
+                ),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: const Text("Cadastrar CEP"),
+                ),
+              ],
             ),
             const SizedBox(
               height: 15,
@@ -89,7 +133,6 @@ class _HomePageState extends State<HomePage> {
               child: ListView.builder(
                 itemCount: _cepsBuscaCeps.results.length,
                 itemBuilder: (_, index) {
-                  //var cep = _cepsBuscaCeps.ceps. .!.results![index];
                   var cep = _cepsBuscaCeps.results[index];
                   return Card(
                     margin:
@@ -111,7 +154,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                       ),
-                      title: Text(cep.cep),
+                      title: Text(cep.cep!),
                       subtitle: Text(
                         '${cep.logradouro} - ${cep.bairro} - ${cep.localidade} / ${cep.uf}',
                       ),
@@ -120,10 +163,7 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.redAccent,
                         iconSize: 30,
                         onPressed: () {
-                          Navigator.pop(
-                            context,
-                            '${cep.objectId},${cep.cep},${cep.logradouro},${cep.bairro},${cep.localidade},${cep.uf}',
-                          );
+                          // faça a logica para deletar
                         },
                       ),
                     ),

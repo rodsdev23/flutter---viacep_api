@@ -21,7 +21,7 @@ class CepsBuscaCepsModel {
 
 class CepBuscaCepsModel {
   String? objectId = '';
-  String cep = '';
+  String? cep = '';
   String? logradouro = '';
   String? complemento = '';
   String? bairro = '';
@@ -30,16 +30,16 @@ class CepBuscaCepsModel {
   String? createdAt = '';
   String? updatedAt = '';
 
-  CepBuscaCepsModel(
-      {this.objectId,
-      required this.cep,
-      this.logradouro,
-      this.complemento,
-      this.bairro,
-      this.localidade,
-      this.uf,
-      this.createdAt,
-      this.updatedAt});
+  // CepBuscaCepsModel(
+  //     {required this.objectId,
+  //     this.cep,
+  //     this.logradouro,
+  //     this.complemento,
+  //     this.bairro,
+  //     this.localidade,
+  //     this.uf,
+  //     this.createdAt,
+  //     this.updatedAt});
 
   CepBuscaCepsModel.fromJson(Map<String, dynamic> json) {
     objectId = json['objectId'];
