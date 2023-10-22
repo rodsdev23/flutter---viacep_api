@@ -116,8 +116,8 @@ class _HomePageState extends State<HomePage> {
                         '${cep.logradouro} - ${cep.bairro} - ${cep.localidade} / ${cep.uf}',
                       ),
                       trailing: IconButton(
-                        icon: const Icon(Icons.check),
-                        color: Colors.greenAccent,
+                        icon: const Icon(Icons.close),
+                        color: Colors.redAccent,
                         iconSize: 30,
                         onPressed: () {
                           Navigator.pop(
