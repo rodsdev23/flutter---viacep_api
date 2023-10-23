@@ -2,6 +2,8 @@ import 'package:apicepviaback4app/models/busca_ceps_model.dart';
 import 'package:apicepviaback4app/repositories/busca_ceps_repository.dart';
 import 'package:flutter/material.dart';
 
+import 'buscacep_cadastrar_cep.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({Key? key})
       : super(key: key); // Correção na declaração do construtor
@@ -80,7 +82,19 @@ class _HomePageState extends State<HomePage> {
                         _cepsBuscaCeps.results = [];
                         carregando = true;
                       });
-                      pesquisarCep(inputCep);
+
+                      var result =
+                          await cepsBuscaCepsRepository.pesquisarCep(inputCep);
+
+                      // Filtrar os resultados de acordo com o CEP desejado
+                      var cepFiltrado = result.results
+                          .where((cep) => cep.cep == inputCep)
+                          .toList();
+
+                      setState(() {
+                        _cepsBuscaCeps.results = cepFiltrado;
+                        carregando = false;
+                      });
                     }
                   }),
             ),
@@ -95,6 +109,7 @@ class _HomePageState extends State<HomePage> {
                       if (verificarCepController >= 8) {
                         setState(() {
                           _cepsBuscaCeps.results = [];
+
                           carregando = true;
                         });
                         final inputCep = cepController.text;
@@ -105,7 +120,7 @@ class _HomePageState extends State<HomePage> {
                         } else {
                           showDialog<AlertDialog>(
                               context: context,
-                              builder: (context) => AlertDialog(
+                              builder: (context) => const AlertDialog(
                                     content: SingleChildScrollView(
                                       child: ListBody(
                                         children: <Widget>[
@@ -121,7 +136,12 @@ class _HomePageState extends State<HomePage> {
                   width: 20,
                 ),
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const BuscaCepCadastrarCep()));
+                  },
                   child: const Text("Cadastrar CEP"),
                 ),
               ],
@@ -164,6 +184,9 @@ class _HomePageState extends State<HomePage> {
                         iconSize: 30,
                         onPressed: () {
                           // faça a logica para deletar
+                          setState(() {
+                            _cepsBuscaCeps.results.removeAt(index);
+                          });
                         },
                       ),
                     ),
