@@ -39,8 +39,6 @@ class _BuscaCepEditarCepPageState extends State<BuscaCepEditarCepPage> {
     ufController.text = widget.cep.results[0].uf ?? '';
   }
 
-  CepsBuscaCepsRepository _cepsBuscaCepsRepository = CepsBuscaCepsRepository();
-
   @override
   Widget build(BuildContext context) {
     return SafeArea(

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:apicepviaback4app/models/busca_ceps_model.dart';
 import 'package:dio/dio.dart';
 
