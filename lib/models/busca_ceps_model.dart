@@ -1,13 +1,13 @@
 class CepsBuscaCepsModel {
-  List<CepBuscaCepsModel> results = [];
+  List<CepBuscaCepsModelAPI> results = [];
 
   CepsBuscaCepsModel(this.results);
 
   CepsBuscaCepsModel.fromJson(Map<String, dynamic> json) {
     if (json['results'] != null) {
-      results = <CepBuscaCepsModel>[];
+      results = <CepBuscaCepsModelAPI>[];
       json['results'].forEach((v) {
-        results.add(new CepBuscaCepsModel.fromJson(v));
+        results.add(CepBuscaCepsModelAPI.fromJson(v));
       });
     }
   }
@@ -19,7 +19,7 @@ class CepsBuscaCepsModel {
   }
 }
 
-class CepBuscaCepsModel {
+class CepBuscaCepsModelAPI {
   String? objectId = '';
   String? cep = '';
   String? logradouro = '';
@@ -30,18 +30,18 @@ class CepBuscaCepsModel {
   String? createdAt = '';
   String? updatedAt = '';
 
-  // CepBuscaCepsModel(
-  //     {required this.objectId,
-  //     this.cep,
-  //     this.logradouro,
-  //     this.complemento,
-  //     this.bairro,
-  //     this.localidade,
-  //     this.uf,
-  //     this.createdAt,
-  //     this.updatedAt});
+  CepBuscaCepsModelAPI(
+      {this.objectId,
+      this.cep,
+      this.logradouro,
+      this.complemento,
+      this.bairro,
+      this.localidade,
+      this.uf,
+      this.createdAt,
+      this.updatedAt});
 
-  CepBuscaCepsModel.fromJson(Map<String, dynamic> json) {
+  CepBuscaCepsModelAPI.fromJson(Map<String, dynamic> json) {
     objectId = json['objectId'];
     cep = json['cep'];
     logradouro = json['logradouro'];

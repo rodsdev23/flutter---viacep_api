@@ -1,18 +1,23 @@
-import 'package:apicepviaback4app/models/busca_ceps_model.dart';
+import 'package:apicepviaback4app/pages/home_page.dart';
 import 'package:apicepviaback4app/repositories/busca_ceps_repository.dart';
 import 'package:flutter/material.dart';
-
+import 'package:apicepviaback4app/models/busca_ceps_model.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 
-class BuscaCepCadastrarCepPage extends StatefulWidget {
-  const BuscaCepCadastrarCepPage({Key? key}) : super(key: key);
+class BuscaCepEditarCepPage extends StatefulWidget {
+  final CepsBuscaCepsModel cep;
+  final CepsBuscaCepsRepository cepsRepository;
+
+  const BuscaCepEditarCepPage({
+    required this.cep,
+    required this.cepsRepository,
+  });
 
   @override
-  State<BuscaCepCadastrarCepPage> createState() =>
-      _BuscaCepCadastrarCepPageState();
+  _BuscaCepEditarCepPageState createState() => _BuscaCepEditarCepPageState();
 }
 
-class _BuscaCepCadastrarCepPageState extends State<BuscaCepCadastrarCepPage> {
+class _BuscaCepEditarCepPageState extends State<BuscaCepEditarCepPage> {
   final _formKey = GlobalKey<FormBuilderState>();
   final TextEditingController cepController = TextEditingController();
   final TextEditingController logradouroController = TextEditingController();
@@ -21,14 +26,26 @@ class _BuscaCepCadastrarCepPageState extends State<BuscaCepCadastrarCepPage> {
   final TextEditingController localidadeController = TextEditingController();
   final TextEditingController ufController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+
+    // Preencha os controladores com os valores do CEP a ser editado
+    cepController.text = widget.cep.results[0].cep ?? '';
+    logradouroController.text = widget.cep.results[0].logradouro ?? '';
+    complementoController.text = widget.cep.results[0].complemento ?? '';
+    bairroController.text = widget.cep.results[0].bairro ?? '';
+    localidadeController.text = widget.cep.results[0].localidade ?? '';
+    ufController.text = widget.cep.results[0].uf ?? '';
+  }
+
   CepsBuscaCepsRepository _cepsBuscaCepsRepository = CepsBuscaCepsRepository();
-  List<CepsBuscaCepsModel> listaResults = [];
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        appBar: AppBar(title: const Text('Cadastrar CEP')),
+        appBar: AppBar(title: const Text('Editar CEP')),
         body: Padding(
           padding: const EdgeInsets.all(10.0),
           child: Container(
@@ -55,21 +72,21 @@ class _BuscaCepCadastrarCepPageState extends State<BuscaCepCadastrarCepPage> {
                           Expanded(
                             child: ElevatedButton(
                               onPressed: _enviarFormulario,
-                              child: const Text('Enviar',
+                              child: const Text('Salvar',
                                   style: TextStyle(color: Colors.white)),
                             ),
                           ),
-                          const SizedBox(width: 20),
+                          const SizedBox(width: 10),
                           Expanded(
-                            child: OutlinedButton(
-                              onPressed: _resetFormulario,
-                              child: Text(
-                                'Reiniciar',
-                                style: TextStyle(
-                                  color:
-                                      Theme.of(context).colorScheme.secondary,
-                                ),
-                              ),
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) => const HomePage()));
+                              },
+                              child: const Text('Cancelar',
+                                  style: TextStyle(color: Colors.white)),
                             ),
                           ),
                         ],
@@ -99,45 +116,38 @@ class _BuscaCepCadastrarCepPageState extends State<BuscaCepCadastrarCepPage> {
   void _enviarFormulario() async {
     if (_formKey.currentState?.saveAndValidate() ?? false) {
       var formData = _formKey.currentState?.value;
-      print('Dados do formulário: $formData');
       if (formData != null) {
-        // Preencha os controladores com os valores do formulário
-        cepController.text = formData['cep'];
-        logradouroController.text = formData['logradouro'];
-        complementoController.text = formData['complemento'];
-        bairroController.text = formData['bairro'];
-        localidadeController.text = formData['localidade'];
-        ufController.text = formData['uf'];
+        var cepId = widget.cep.results[0].objectId;
 
-        // Crie uma instância do modelo com os valores dos controladores
-        var cepBuscaCepsModelAPI = CepBuscaCepsModelAPI(
-          cep: cepController.text,
-          logradouro: logradouroController.text,
-          complemento: complementoController.text,
-          bairro: bairroController.text,
-          localidade: localidadeController.text,
-          uf: ufController.text,
-        );
+        if (cepId != null) {
+          try {
+            var cepModel = CepBuscaCepsModelAPI(
+                objectId: cepId,
+                cep: formData['cep'],
+                logradouro: formData['logradouro'],
+                complemento: formData['complemento'],
+                bairro: formData['bairro'],
+                localidade: formData['localidade'],
+                uf: formData['uf'],
+                updatedAt: formData['updatedAt'],
+                createdAt: formData['createdAt']);
 
-        try {
-          await _cepsBuscaCepsRepository.criar(cepBuscaCepsModelAPI);
+            await widget.cepsRepository.atualizarCEP(cepId, cepModel);
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: const Text('Formulário enviado com sucesso!')),
+            );
+          } catch (error) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Erro ao enviar o formulário: $error')),
+            );
+          }
+        } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: const Text('Formulário enviado com sucesso!')),
-          );
-        } catch (error) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao enviar o formulário: $error')),
+            SnackBar(content: const Text('Falha na validação')),
           );
         }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: const Text('Falha na validação')),
-        );
       }
     }
-  }
-
-  void _resetFormulario() {
-    _formKey.currentState?.reset();
   }
 }

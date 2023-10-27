@@ -1,4 +1,5 @@
 import 'package:apicepviaback4app/models/busca_ceps_model.dart';
+import 'package:apicepviaback4app/pages/buscacep_editar_cep.dart.dart';
 import 'package:apicepviaback4app/repositories/busca_ceps_repository.dart';
 import 'package:flutter/material.dart';
 
@@ -32,6 +33,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       carregando = true;
     });
+    // pega todos os ceps
     var ceps = await cepsBuscaCepsRepository.obterTodosCeps();
     setState(() {
       _cepsBuscaCeps = CepsBuscaCepsModel(
@@ -40,15 +42,22 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  pesquisarCep(String cep) async {
+  Future<void> pesquisarECarregarCeps(String inputCep) async {
     setState(() {
+      _cepsBuscaCeps.results.clear(); // Limpa os resultados existentes
       carregando = true;
     });
-    await cepsBuscaCepsRepository.pesquisarCep(cep);
-
-    setState(() {
-      carregando = false;
-    });
+    if (inputCep != '') {
+      var resultadosPesquisa =
+          await cepsBuscaCepsRepository.pesquisarCep(inputCep);
+      setState(() {
+        _cepsBuscaCeps.results
+            .addAll(resultadosPesquisa.results); // Adiciona novos resultados
+        carregando = false;
+      });
+    } else {
+      obterCeps();
+    }
   }
 
   @override
@@ -75,24 +84,19 @@ class _HomePageState extends State<HomePage> {
                   controller: cepController,
                   decoration: const InputDecoration(labelText: "Digite o CEP"),
                   onChanged: (value) async {
-                    final inputCep = cepController.text;
+                    final inputCep = value;
 
-                    if (inputCep.isNotEmpty) {
-                      setState(() {
-                        _cepsBuscaCeps.results = [];
-                        carregando = true;
-                      });
-
-                      var result =
-                          await cepsBuscaCepsRepository.pesquisarCep(inputCep);
-
-                      // Filtrar os resultados de acordo com o CEP desejado
-                      var cepFiltrado = result.results
-                          .where((cep) => cep.cep == inputCep)
-                          .toList();
+                    if (inputCep != "" &&
+                        double.parse(inputCep) >= 1 &&
+                        double.parse(inputCep) <= 8) {
+                      if (inputCep.isNotEmpty) {
+                        setState(() {
+                          _cepsBuscaCeps.results = [];
+                          carregando = true;
+                        });
+                      }
 
                       setState(() {
-                        _cepsBuscaCeps.results = cepFiltrado;
                         carregando = false;
                       });
                     }
@@ -102,45 +106,47 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton(
-                    child: const Text("Buscar"),
-                    onPressed: () async {
-                      var verificarCepController =
-                          double.parse(cepController.text);
-                      if (verificarCepController >= 8) {
-                        setState(() {
-                          _cepsBuscaCeps.results = [];
+                  child: const Text("Buscar"),
+                  onPressed: () async {
+                    final inputCep = cepController.text;
+                    if (inputCep.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Por favor, insira um CEP válido.'),
+                        ),
+                      );
+                    } else {
+                      setState(() {
+                        _cepsBuscaCeps.results = [];
+                        carregando = true;
+                      });
 
-                          carregando = true;
+                      try {
+                        await pesquisarECarregarCeps(inputCep);
+                      } catch (error) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Erro ao buscar o CEP: $error'),
+                          ),
+                        );
+                      } finally {
+                        setState(() {
+                          carregando = false;
                         });
-                        final inputCep = cepController.text;
-                        if (inputCep.isNotEmpty &&
-                            double.tryParse(inputCep) != null) {
-                          final parsedCep = double.parse(inputCep);
-                          await pesquisarCep(parsedCep.toString());
-                        } else {
-                          showDialog<AlertDialog>(
-                              context: context,
-                              builder: (context) => const AlertDialog(
-                                    content: SingleChildScrollView(
-                                      child: ListBody(
-                                        children: <Widget>[
-                                          Text('CEP inválido!'),
-                                        ],
-                                      ),
-                                    ),
-                                  ));
-                        }
                       }
-                    }),
+                    }
+                  },
+                ),
                 const SizedBox(
                   width: 20,
                 ),
                 ElevatedButton(
                   onPressed: () {
+                    carregando = true;
                     Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const BuscaCepCadastrarCep()));
+                            builder: (_) => const BuscaCepCadastrarCepPage()));
                   },
                   child: const Text("Cadastrar CEP"),
                 ),
@@ -176,18 +182,125 @@ class _HomePageState extends State<HomePage> {
                       ),
                       title: Text(cep.cep!),
                       subtitle: Text(
-                        '${cep.logradouro} - ${cep.bairro} - ${cep.localidade} / ${cep.uf}',
+                        '${cep.logradouro} \n ${cep.bairro} \n ${cep.localidade} / ${cep.uf}',
                       ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.close),
-                        color: Colors.redAccent,
-                        iconSize: 30,
-                        onPressed: () {
-                          // faça a logica para deletar
-                          setState(() {
-                            _cepsBuscaCeps.results.removeAt(index);
-                          });
+                      trailing: PopupMenuButton<PopupMenuOptions>(
+                        onSelected: (value) {
+                          // editar cep
+                          if (value == PopupMenuOptions.editar) {
+                            Navigator.of(context).pop();
+
+                            // Obtenha o CEP que deseja editar
+                            var objectId =
+                                _cepsBuscaCeps.results[index].objectId;
+                            var cep = _cepsBuscaCeps.results[index].cep;
+                            var logradouro =
+                                _cepsBuscaCeps.results[index].logradouro;
+                            var complemento =
+                                _cepsBuscaCeps.results[index].complemento;
+                            var bairro = _cepsBuscaCeps.results[index].bairro;
+                            var localidade =
+                                _cepsBuscaCeps.results[index].localidade;
+                            var uf = _cepsBuscaCeps.results[index].uf;
+
+                            // Crie um objeto CepsBuscaCepsModel com o valor do 'cep'
+                            var cepModel = CepsBuscaCepsModel([
+                              CepBuscaCepsModelAPI(
+                                objectId: objectId,
+                                cep: cep,
+                                logradouro: logradouro,
+                                complemento: complemento,
+                                bairro: bairro,
+                                localidade: localidade,
+                                uf: uf,
+                              )
+                            ]);
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => BuscaCepEditarCepPage(
+                                  cep: cepModel,
+                                  cepsRepository: cepsBuscaCepsRepository,
+                                ),
+                              ),
+                            ).then((result) {
+                              if (result == true) {
+                                // Atualize a lista de CEPs após a edição bem-sucedida
+                                obterCeps();
+                              }
+                            });
+                          }
+
+                          // excluir cep
+                          if (value == PopupMenuOptions.excluir) {
+                            showDialog<bool>(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (context) {
+                                return AlertDialog(
+                                  content: const Text(
+                                      'Tem certeza que deseja excluir?'),
+                                  actions: [
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        // Obtenha o ID do CEP que deseja excluir
+                                        var cepId = _cepsBuscaCeps
+                                            .results[index].objectId;
+
+                                        // Exiba um CircularProgressIndicator enquanto aguarda a exclusão
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) {
+                                            return const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            );
+                                          },
+                                        );
+
+                                        // Realize a exclusão
+                                        if (cepId != null) {
+                                          await cepsBuscaCepsRepository
+                                              .deletarCep(cepId);
+                                        }
+
+                                        // Após a exclusão, feche o diálogo e atualize a lista
+                                        Navigator.pop(
+                                            context); // Fecha o diálogo de progresso
+                                        Navigator.pop(context,
+                                            true); // Fecha o diálogo de confirmação
+
+                                        setState(() {
+                                          // Remova da lista
+                                          _cepsBuscaCeps.results
+                                              .removeAt(index);
+                                        });
+                                      },
+                                      child: const Text('Sim'),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text('Não'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          }
                         },
+                        itemBuilder: (BuildContext context) =>
+                            <PopupMenuEntry<PopupMenuOptions>>[
+                          const PopupMenuItem<PopupMenuOptions>(
+                            value: PopupMenuOptions.editar,
+                            child: Text('Editar'),
+                          ),
+                          const PopupMenuItem<PopupMenuOptions>(
+                            value: PopupMenuOptions.excluir,
+                            child: Text('Excluir'),
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -202,4 +315,17 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
+
+_close(BuildContext context) {
+  // Após a exclusão, feche o diálogo e atualize a lista
+  Navigator.pop(context); // Fecha o diálogo de progresso
+  Navigator.pop(context, true); // Fecha o diálogo de confirmação
+}
+
+void _excluirCep(BuildContext context, int index) {}
+
+enum PopupMenuOptions {
+  editar,
+  excluir,
 }
