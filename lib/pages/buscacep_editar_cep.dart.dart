@@ -135,6 +135,8 @@ class _BuscaCepEditarCepPageState extends State<BuscaCepEditarCepPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: const Text('Formulário enviado com sucesso!')),
             );
+            Navigator.pushReplacement(
+                context, MaterialPageRoute(builder: (_) => HomePage()));
           } catch (error) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text('Erro ao enviar o formulário: $error')),

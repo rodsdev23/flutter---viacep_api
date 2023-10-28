@@ -1,4 +1,5 @@
 import 'package:apicepviaback4app/models/busca_ceps_model.dart';
+import 'package:apicepviaback4app/pages/home_page.dart';
 import 'package:apicepviaback4app/repositories/busca_ceps_repository.dart';
 import 'package:flutter/material.dart';
 
@@ -124,6 +125,8 @@ class _BuscaCepCadastrarCepPageState extends State<BuscaCepCadastrarCepPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: const Text('Formulário enviado com sucesso!')),
           );
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (_) => HomePage()));
         } catch (error) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Erro ao enviar o formulário: $error')),

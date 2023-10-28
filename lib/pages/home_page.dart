@@ -81,10 +81,14 @@ class _HomePageState extends State<HomePage> {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(
+                  keyboardType: TextInputType.number,
                   controller: cepController,
                   decoration: const InputDecoration(labelText: "Digite o CEP"),
                   onChanged: (value) async {
                     final inputCep = value;
+                    if (cepController.text.isEmpty) {
+                      obterCeps();
+                    }
 
                     if (inputCep != "" &&
                         double.parse(inputCep) >= 1 &&
